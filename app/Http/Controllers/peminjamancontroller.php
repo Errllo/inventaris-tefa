@@ -32,26 +32,39 @@ class peminjamancontroller extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        $request->validate([
-            'peminjam_id' => 'required',
-            'barang_id' => 'required',
-            'tanggal_pinjam' => 'required|date',
-            'tanggal_kembali' => 'required|date',
-            'jumlah_pinjam' => 'required|numeric|min:1',
-            'status_peminjaman' => 'required'
-        ]);
+{
+    // 1. Jalankan validasi format input standar
+    $request->validate([
+        'peminjam_id' => 'required',
+        'barang_id' => 'required',
+        'tanggal_pinjam' => 'required|date',
+        'tanggal_kembali' => 'required|date',
+        'jumlah_pinjam' => 'required|numeric|min:1',
+        'status_peminjaman' => 'required'
+    ]);
 
-        // 1. Simpan transaksi riwayat peminjaman terlebih dahulu
-        peminjaman::create($request->all());
+    // 2. AMBIL DATA BARANG DULU penting ditaruh sebelum proses 'create'
+    $barang = barang::findOrFail($request->barang_id);
 
-        // 2. Potong stok jika statusnya 'dipinjam' ATAU 'terlambat' (karena barang sama-sama keluar dari lab)
-        if ($request->status_peminjaman == 'dipinjam' || $request->status_peminjaman == 'terlambat') {
-            barang::where('id', $request->barang_id)->decrement('stok', $request->jumlah_pinjam);
-        }
+    // 3. GERBANG PENGAMAN: Jika statusnya barang keluar DAN stok di lab tidak cukup
+    if (($request->status_peminjaman == 'dipinjam' || $request->status_peminjaman == 'terlambat') && $barang->stok < $request->jumlah_pinjam) {
 
-        return redirect()->route('peminjaman.index')->with('sukses', 'Peminjaman berhasil.');
+        // gagal simpan balik badan ke halaman form bawa pesan error merah
+        return redirect()->back()
+            ->withInput()
+            ->withErrors(['jumlah_pinjam' => "Stok tidak mencukupi. Stok {$barang->nama_barang} hanya tersisa {$barang->stok} unit."]);
     }
+
+    // 4. kalo lolos kondisi IF di atas (artinya stok aman), simpan data peminjaman
+    peminjaman::create($request->all());
+
+    // 5. Potong stok barang di database
+    if ($request->status_peminjaman == 'dipinjam' || $request->status_peminjaman == 'terlambat') {
+        $barang->decrement('stok', $request->jumlah_pinjam);
+    }
+
+    return redirect()->route('peminjaman.index')->with('sukses', 'Peminjaman berhasil.');
+}
 
     /**
      * Display the specified resource.
