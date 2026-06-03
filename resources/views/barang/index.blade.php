@@ -55,9 +55,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($barang as $no => $b)
+                            @foreach($barang as $b)
                             <tr>
-                                <td class="text-center fw-bold text-secondary">{{ $no + 1 }}</td>
+                                <td class="text-center fw-bold text-secondary">{{ $loop->iteration }}</td>
                                 <td class="px-3 fw-semibold text-dark">{{ $b->nama_barang }}</td>
                                 <td class="px-3 text-secondary">{{ $b->kategori_barang }}</td>
                                 <td class="px-3"><span class="badge bg-secondary px-2.5 py-1.5">{{ $b->stok }}</span></td>
