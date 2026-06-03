@@ -68,6 +68,7 @@
                     <select name="status_peminjaman" class="form-select" required>
                         <option value="dipinjam">dipinjam</option>
                         <option value="dikembalikan">dikembalikan</option>
+                        <option value="terlambat">terlambat</option>
                     </select>
                 </div>
 

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <title>Document</title>
+    <title>Edit Peminjaman</title>
 </head>
 <body class="bg-light">
     <div class="container mt-5">
@@ -14,9 +14,22 @@
             <h5 class="mb-0">Edit Status / Data Peminjaman</h5>
         </div>
         <div class="card-body">
+
+            @if ($errors->any())
+                <div class="alert alert-danger py-2">
+                    <ul class="mb-0 fs-7">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <form action="{{ route('peminjaman.update', $peminjaman->id) }}" method="post">
                 @csrf
                 @method('put')
+
+                <input type="hidden" name="jumlah_pinjam" value="{{ $peminjaman->jumlah_pinjam }}">
 
                 <div class="mb-3">
                     <label class="form-label">Nama Siswa (Peminjam)</label>
@@ -47,9 +60,10 @@
 
                 <div class="mb-3">
                     <label class="form-label">Status Peminjaman</label>
-                    <select name="status" class="form-select" required>
-                        <option value="dipinjam" {{ $peminjaman->status == 'dipinjam' ? 'selected' : '' }}>dipinjam</option>
-                        <option value="dikembalikan" {{ $peminjaman->status == 'dikembalikan' ? 'selected' : '' }}>dikembalikan</option>
+                    <select name="status_peminjaman" class="form-select" required>
+                        <option value="dipinjam" {{ $peminjaman->status_peminjaman == 'dipinjam' ? 'selected' : '' }}>dipinjam</option>
+                        <option value="dikembalikan" {{ $peminjaman->status_peminjaman == 'dikembalikan' ? 'selected' : '' }}>dikembalikan</option>
+                        <option value="terlambat" {{ $peminjaman->status_peminjaman == 'terlambat' ? 'selected' : '' }}>terlambat</option>
                     </select>
                 </div>
 

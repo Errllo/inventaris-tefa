@@ -45,8 +45,8 @@ class peminjamancontroller extends Controller
         // 1. Simpan transaksi riwayat peminjaman terlebih dahulu
         peminjaman::create($request->all());
 
-        // 2. Potong stok menggunakan Model 'barang' jika statusnya dipinjam
-        if ($request->status_peminjaman == 'dipinjam') {
+        // 2. Potong stok jika statusnya 'dipinjam' ATAU 'terlambat' (karena barang sama-sama keluar dari lab)
+        if ($request->status_peminjaman == 'dipinjam' || $request->status_peminjaman == 'terlambat') {
             barang::where('id', $request->barang_id)->decrement('stok', $request->jumlah_pinjam);
         }
 
@@ -81,7 +81,7 @@ class peminjamancontroller extends Controller
             'peminjam_id' => 'required',
             'barang_id' => 'required',
             'tanggal_pinjam' => 'required|date',
-            'tanggal_kembali' => 'required|date',
+            'tanggal_kembali' => 'nullable|date',
             'jumlah_pinjam' => 'required|numeric|min:1',
             'status_peminjaman' => 'required'
         ]);
@@ -89,10 +89,14 @@ class peminjamancontroller extends Controller
         $peminjaman = peminjaman::findOrFail($id);
         $statusLama = $peminjaman->status_peminjaman;
 
-        if ($statusLama == 'dipinjam' && $request->status_peminjaman == 'dikembalikan') {
+        // KONDISI A: Dari belum kembali (dipinjam/terlambat) menjadi dikembalikan
+        // Stok di lab bertambah kembali karena barang dipulangkan siswa
+        if (($statusLama == 'dipinjam' || $statusLama == 'terlambat') && $request->status_peminjaman == 'dikembalikan') {
             barang::where('id', $request->barang_id)->increment('stok', $peminjaman->jumlah_pinjam);
         }
-        elseif ($statusLama == 'dikembalikan' && $request->status_peminjaman == 'dipinjam') {
+        // KONDISI B: Dari sudah kembali diubah menjadi belum kembali (dipinjam/terlambat)
+        // Stok di lab harus dikurangi lagi karena barang dibawa keluar lagi oleh siswa
+        elseif ($statusLama == 'dikembalikan' && ($request->status_peminjaman == 'dipinjam' || $request->status_peminjaman == 'terlambat')) {
             barang::where('id', $request->barang_id)->decrement('stok', $request->jumlah_pinjam);
         }
 
@@ -108,7 +112,9 @@ class peminjamancontroller extends Controller
     {
         $peminjaman = peminjaman::findOrFail($id);
 
-        if ($peminjaman->status_peminjaman == 'dipinjam') {
+        // Jika riwayat yang dihapus statusnya masih 'dipinjam' atau 'terlambat',
+        // pulihkan jumlah stok barang tersebut ke database lab
+        if ($peminjaman->status_peminjaman == 'dipinjam' || $peminjaman->status_peminjaman == 'terlambat') {
             barang::where('id', $peminjaman->barang_id)->increment('stok', $peminjaman->jumlah_pinjam);
         }
 
